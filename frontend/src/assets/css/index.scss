@@ -98,11 +98,15 @@ a {
     align-items: center;
   }
   .videoEditBoxVideoBox {
+    //display: inline-block;
+    max-width: 100vw;
+    max-height: calc(100vh - 50px - 140px);
     position: relative;
   }
   .videoEditBoxVideoBoxSrc {
     display: block;
-    height: 100%;
+    max-width: 100vw;
+    max-height: calc(100vh - 50px - 140px);
     margin: 0 auto;
   }
   .videoEditBoxControl {

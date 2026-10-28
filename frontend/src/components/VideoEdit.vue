@@ -66,7 +66,7 @@ import CropIcon from "../assets/icons/crop.svg"
 import RepeatIcon from "../assets/icons/repeat.svg"
 import SpeedometerIcon from "../assets/icons/speedometer2.svg"
 import FloppyIcon from "../assets/icons/floppy.svg"
-import {ref,computed,watch,onMounted} from "vue"
+import {ref,computed,watch,onMounted,nextTick} from "vue"
 import { SaveFileDialog,APIExecMedia,ExportMedia } from "../../wailsjs/go/main/App";
 const props = defineProps(['src','info'])
 
@@ -83,7 +83,18 @@ const controlConfig = ref({
     loop: true
 })
 const cropDataConfig = ref({
-  x:0,y:0,width:0,height:0
+  x:0,
+  y:0,
+  width:0,
+  height:0
+})
+const videoSizeConfig = ref({
+  videoWidth:0,
+  videoHeight:0,
+  offsetWidth:0,
+  offsetHeight:0,
+  scaleX:1,
+  scaleY:1
 })
 const stageConfig = ref({ width: 0, height: 0 })
 const trConfig = ref({
@@ -135,11 +146,21 @@ function canvasInit() {
   stageConfig.value.height = stageRef.value.offsetHeight
   cropConfig.value.width = stageConfig.value.width
   cropConfig.value.height = stageConfig.value.height
+  videoSizeConfig.value.offsetWidth = mediaBox.value.offsetWidth
+  videoSizeConfig.value.offsetHeight = mediaBox.value.offsetHeight
+  videoSizeConfig.value.videoWidth = mediaBox.value.videoWidth
+  videoSizeConfig.value.videoHeight = mediaBox.value.videoHeight
+  videoSizeConfig.value.scaleX = videoSizeConfig.value.videoWidth / videoSizeConfig.value.offsetWidth
+  videoSizeConfig.value.scaleY = videoSizeConfig.value.videoHeight / videoSizeConfig.value.offsetHeight
   //const parentElement = stageRef.value.parentElement
   var cropNode = cropRef.value.getNode();
+  let node=cropRef.value.getStage()
   var trNode = trRef.value.getNode();
   trNode.nodes([cropNode]);
   trNode.getLayer().batchDraw();
+  nextTick(()=> {
+    node.fire('transformend', { customData: '這是模擬的資料' }, true);
+  })
 }
 
 function timeRangeInput(e) {
@@ -148,8 +169,8 @@ function timeRangeInput(e) {
   lastTimeRange.value=e
 }
 
-function onLoaded() {
-    console.log("影片載入成功")
+function onLoaded(e) {
+    console.log("影片載入成功",e)
     console.log("影片長度:", mediaBox)
     mediaDuration.value=mediaBox.value.duration
     timeRange.value[1]=mediaDuration.value
@@ -170,12 +191,10 @@ function onError() {
 }
 
 function updateCropDataConfig(e) {
-  console.log("update cropData - ",e.target.attrs)
   cropDataConfig.value.x=e.target.attrs.x
   cropDataConfig.value.y=e.target.attrs.y
   cropDataConfig.value.width=e.target.attrs.width * (e.target.attrs?.scaleX || 1)
   cropDataConfig.value.height=e.target.attrs.height * (e.target.attrs?.scaleY || 1)
-  console.log(cropDataConfig.value,e,cropRef.value)
 }
 
 async function exportFunc() {
@@ -184,11 +203,11 @@ async function exportFunc() {
     controlConfig:controlConfig.value,
     cropDataConfig:cropDataConfig.value,
     timeRange:timeRange.value,
+    videoSizeConfig:videoSizeConfig.value,
     exportConfig:exportConfig.value
   }
 
   let res=await ExportMedia(data)
-  console.log(1111,res,data)
 }
 
 async function testC() {

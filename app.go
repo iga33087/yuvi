@@ -29,8 +29,13 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
+	var hasEXE string = ""
 	platform := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
 	fmt.Println("目前平台:", platform)
+
+	if isWindows := strings.Contains(platform, "windows"); isWindows {
+		hasEXE += ".exe"
+	}
 
 	// 建立專屬暫存目錄
 	dir, err := os.MkdirTemp("", "govi2-*")
@@ -42,7 +47,7 @@ func (a *App) startup(ctx context.Context) {
 	a.tempDir = dir
 
 	// 解壓縮 yt-dlp 和 ffmpeg
-	for _, name := range []string{"yt-dlp", "ffmpeg"} {
+	for _, name := range []string{"yt-dlp" + hasEXE, "ffmpeg" + hasEXE} {
 
 		data, err := embeddedTools.ReadFile("bin/" + platform + "/" + name)
 		if err != nil {
@@ -58,9 +63,9 @@ func (a *App) startup(ctx context.Context) {
 		}
 
 		switch name {
-		case "yt-dlp":
+		case "yt-dlp" + hasEXE:
 			a.ytdlpPath = path
-		case "ffmpeg":
+		case "ffmpeg" + hasEXE:
 			a.ffmpegPath = path
 		}
 	}
@@ -314,6 +319,10 @@ func (a *App) ExportMedia(data map[string]any) bool {
 	if !ok {
 		return false
 	}
+	videoSizeConfig, ok := data["videoSizeConfig"].(map[string]any)
+	if !ok {
+		return false
+	}
 	exportConfig, ok := data["exportConfig"].(map[string]any)
 	if !ok {
 		return false
@@ -345,13 +354,13 @@ func (a *App) ExportMedia(data map[string]any) bool {
 		if len(vfString) != 0 {
 			vfString += ","
 		}
-		vfString += fmt.Sprintf("crop=%g:%g:%g:%g", cropDataConfig["width"], cropDataConfig["height"], cropDataConfig["x"], cropDataConfig["y"])
+		vfString += fmt.Sprintf("crop=%g:%g:%g:%g", cropDataConfig["width"].(float64)*videoSizeConfig["scaleX"].(float64), cropDataConfig["height"].(float64)*videoSizeConfig["scaleY"].(float64), cropDataConfig["x"].(float64)*videoSizeConfig["scaleX"].(float64), cropDataConfig["y"].(float64)*videoSizeConfig["scaleY"].(float64))
 	}
 
 	if len(vfString) != 0 {
 		vfFlag = "-vf"
 	}
-	fmt.Println(77777, vfString)
+	fmt.Println("ffmpegvf -", vfString)
 	savePath, savePathErr := a.SaveFileDialog()
 	if savePathErr != nil {
 		return false
