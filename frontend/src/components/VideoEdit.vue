@@ -35,7 +35,7 @@
           <video class="videoEditBoxVideoBoxSrc" ref="mediaBox" :src="src" @loadedmetadata="onLoaded" @error="onError" @play="checkTime" />
           <v-stage :config="stageConfig" class="videoEditBoxVideoCrop" v-show="controlConfig.crop">
             <v-layer>
-              <v-rect ref="cropRef" :config="cropConfig" @dragend="onDragend" @transformend="onTransformend" />
+              <v-rect ref="cropRef" :config="cropConfig" @click="updateCropDataConfig" @dragend="updateCropDataConfig" @transformend="updateCropDataConfig" />
               <v-transformer ref="trRef" :config="trConfig" />
             </v-layer>
           </v-stage>
@@ -44,14 +44,14 @@
       <div class="videoEditBoxControl">
         <el-slider class="mb-4" v-model="timeRange" range :step="0.1" :max="mediaDuration" :marks="mediaMark" @input="timeRangeInput" />
         <div class="d-flex align-items-center justify-content-between">
-          <div>
-            <button type="button" class="btn rounded-pill me-2" :class="controlConfig.play ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.play=!controlConfig.play">{{controlConfig.play ? '暫停':'播放'}}</button>
-            <button type="button" class="btn rounded-pill me-2" :class="controlConfig.crop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.crop=!controlConfig.crop">範圍剪裁</button>
-            <button type="button" class="btn rounded-pill me-2" :class="controlConfig.loop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.loop=!controlConfig.loop">循環播放</button>
-            <button type="button" class="btn btn-outline-secondary rounded-pill me-2">播放速度</button>
+          <div class="d-flex align-items-center">
+            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.play ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.play=!controlConfig.play"><PauseIcon class="me-2" v-if="controlConfig.play" /><PlayIcon class="me-2" v-else /> {{controlConfig.play ? '暫停':'播放'}}</button>
+            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.crop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.crop=!controlConfig.crop;testC()"><CropIcon class="me-2" />範圍剪裁</button>
+            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.loop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.loop=!controlConfig.loop"><RepeatIcon class="me-2" />循環播放</button>
+            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill me-2"><SpeedometerIcon class="me-2" />播放速度</button>
           </div>
           <div>
-            <button type="button" class="btn btn-outline-secondary rounded-pill" @click="showExportDialog=!showExportDialog">匯出</button>
+            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill" @click="showExportDialog=!showExportDialog"><FloppyIcon class="me-2" />匯出</button>
           </div>
         </div>
       </div>
@@ -60,6 +60,12 @@
 </template>
 
 <script setup>
+import PlayIcon from "../assets/icons/play-fill.svg"
+import PauseIcon from "../assets/icons/pause-fill.svg"
+import CropIcon from "../assets/icons/crop.svg"
+import RepeatIcon from "../assets/icons/repeat.svg"
+import SpeedometerIcon from "../assets/icons/speedometer2.svg"
+import FloppyIcon from "../assets/icons/floppy.svg"
 import {ref,computed,watch,onMounted} from "vue"
 import { SaveFileDialog,APIExecMedia,ExportMedia } from "../../wailsjs/go/main/App";
 const props = defineProps(['src','info'])
@@ -75,6 +81,9 @@ const controlConfig = ref({
     crop: false,
     speed: 1,
     loop: true
+})
+const cropDataConfig = ref({
+  x:0,y:0,width:0,height:0
 })
 const stageConfig = ref({ width: 0, height: 0 })
 const trConfig = ref({
@@ -122,7 +131,6 @@ const mediaMark=computed(()=> {
 })
 
 function canvasInit() {
-  console.log(17)
   stageConfig.value.width = stageRef.value.offsetWidth
   stageConfig.value.height = stageRef.value.offsetHeight
   cropConfig.value.width = stageConfig.value.width
@@ -161,25 +169,31 @@ function onError() {
     })
 }
 
-function onDragend(e) {
-  console.log(111,e)
-}
-
-function onTransformend(e) {
-  console.log(112,e)
+function updateCropDataConfig(e) {
+  console.log("update cropData - ",e.target.attrs)
+  cropDataConfig.value.x=e.target.attrs.x
+  cropDataConfig.value.y=e.target.attrs.y
+  cropDataConfig.value.width=e.target.attrs.width * (e.target.attrs?.scaleX || 1)
+  cropDataConfig.value.height=e.target.attrs.height * (e.target.attrs?.scaleY || 1)
+  console.log(cropDataConfig.value,e,cropRef.value)
 }
 
 async function exportFunc() {
   let data= {
     info:props.info,
     controlConfig:controlConfig.value,
-    cropConfig:cropConfig.value,
+    cropDataConfig:cropDataConfig.value,
     timeRange:timeRange.value,
     exportConfig:exportConfig.value
   }
 
   let res=await ExportMedia(data)
   console.log(1111,res,data)
+}
+
+async function testC() {
+  let node=cropRef.value.getStage()
+  node.fire('transformend', { customData: '這是模擬的資料' }, true);
 }
 
 function checkTime() {

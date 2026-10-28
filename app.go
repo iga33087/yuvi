@@ -8,9 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -28,6 +29,9 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
+	platform := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
+	fmt.Println("目前平台:", platform)
+
 	// 建立專屬暫存目錄
 	dir, err := os.MkdirTemp("", "govi2-*")
 	if err != nil {
@@ -38,9 +42,9 @@ func (a *App) startup(ctx context.Context) {
 	a.tempDir = dir
 
 	// 解壓縮 yt-dlp 和 ffmpeg
-	for _, name := range []string{"yt-dlp.exe", "ffmpeg.exe"} {
+	for _, name := range []string{"yt-dlp", "ffmpeg"} {
 
-		data, err := embeddedTools.ReadFile("bin/" + name)
+		data, err := embeddedTools.ReadFile("bin/" + platform + "/" + name)
 		if err != nil {
 			fmt.Println("讀取失敗:", err)
 			return
@@ -54,9 +58,9 @@ func (a *App) startup(ctx context.Context) {
 		}
 
 		switch name {
-		case "yt-dlp.exe":
+		case "yt-dlp":
 			a.ytdlpPath = path
-		case "ffmpeg.exe":
+		case "ffmpeg":
 			a.ffmpegPath = path
 		}
 	}
@@ -147,16 +151,16 @@ func (a *App) Test2(f any) string {
 }
 
 func (a *App) SelectAndProcessFile() (string, error) {
-	options := runtime.OpenDialogOptions{
+	options := wailsRuntime.OpenDialogOptions{
 		Title: "請選擇要上傳的檔案",
-		Filters: []runtime.FileFilter{
+		Filters: []wailsRuntime.FileFilter{
 			{
 				DisplayName: "圖片與文字檔 (*.png;*.jpg;*.txt)",
 				//Pattern:     "*.png;*.jpg;*.txt", // 限制檔案類型，若不限制可不填
 			},
 		},
 	}
-	filePath, err := runtime.OpenFileDialog(a.ctx, options)
+	filePath, err := wailsRuntime.OpenFileDialog(a.ctx, options)
 	if err != nil {
 		return "", fmt.Errorf("開啟檔案視窗失敗: %w", err)
 	}
@@ -168,9 +172,9 @@ func (a *App) SelectAndProcessFile() (string, error) {
 }
 
 func (a *App) SaveFileDialog() (string, error) {
-	options := runtime.SaveDialogOptions{
+	options := wailsRuntime.SaveDialogOptions{
 		Title: "請選擇存放位置",
-		Filters: []runtime.FileFilter{
+		Filters: []wailsRuntime.FileFilter{
 			{
 				DisplayName: "media",
 				Pattern:     "*.gif;", // 限制檔案類型，若不限制可不填
@@ -181,7 +185,7 @@ func (a *App) SaveFileDialog() (string, error) {
 			},
 		},
 	}
-	filePath, err := runtime.SaveFileDialog(a.ctx, options)
+	filePath, err := wailsRuntime.SaveFileDialog(a.ctx, options)
 	if err != nil {
 		return "", fmt.Errorf("開啟檔案視窗失敗: %w", err)
 	}
@@ -298,6 +302,14 @@ func (a *App) ExportMedia(data map[string]any) bool {
 	if !ok {
 		return false
 	}
+	controlConfig, ok := data["controlConfig"].(map[string]any)
+	if !ok {
+		return false
+	}
+	cropDataConfig, ok := data["cropDataConfig"].(map[string]any)
+	if !ok {
+		return false
+	}
 	timeRange, ok := data["timeRange"].([]any)
 	if !ok {
 		return false
@@ -328,6 +340,14 @@ func (a *App) ExportMedia(data map[string]any) bool {
 	if palette {
 		vfString += ":flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
 	}
+	crop, ok := controlConfig["crop"].(bool)
+	if crop {
+		if len(vfString) != 0 {
+			vfString += ","
+		}
+		vfString += fmt.Sprintf("crop=%g:%g:%g:%g", cropDataConfig["width"], cropDataConfig["height"], cropDataConfig["x"], cropDataConfig["y"])
+	}
+
 	if len(vfString) != 0 {
 		vfFlag = "-vf"
 	}
@@ -344,6 +364,7 @@ func (a *App) ExportMedia(data map[string]any) bool {
 		savePath,
 	})
 	if err != nil {
+		fmt.Println("ExportMedia Error - ", err.Error())
 		return false
 	}
 	return true

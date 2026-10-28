@@ -4,9 +4,12 @@
     <CardBox class="rounded-5">
         <template v-slot:content>
             <div class="d-flex align-items-center justify-content-between">
-              <div class="fs-4">選擇本地媒體</div>
+              <div class="fs-4"><HostIcon />選擇本地媒體</div>
               <div class="d-flex align-items-center">
-                <button type="button" class="btn btn-primary" @click="mediaChooseChange">選擇檔案</button>
+                <button type="button" class="btn btn-primary" @click="mediaChooseChange">
+                  <FileIcon />
+                  選擇檔案
+                </button>
                 <button type="button" class="btn btn-primary" @click="mediaChooseChange2">選擇檔案2</button>
               </div>
             </div>
@@ -28,6 +31,8 @@
 </template>
 
 <script setup>
+import FileIcon from "../assets/icons/file-earmark-play.svg"
+import HostIcon from "../assets/icons/pc-display-horizontal.svg"
 import { Test2,SelectAndProcessFile,GetFileInfo } from "../../wailsjs/go/main/App";
 import CardBox from '../components/CardBox.vue'
 import { useRouter } from 'vue-router'
