@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="bg-light bg-gradient">
-    <Loading v-if="store.loading" />
+    <Loading />
     <Header />
     <div class="content">
       <router-view class="contentBox" />
