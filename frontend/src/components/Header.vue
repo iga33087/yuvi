@@ -1,5 +1,5 @@
 <template>
-  <div class="header">
+  <div class="header bg-dark bg-gradient">
       <div class="headerBox">
           <a href="/" class="headerBoxLogo fs-3">YUVI</a>
           <div class="headerBoxMenu">

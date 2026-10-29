@@ -11,12 +11,48 @@ html,body {
     padding: 0;
     font-family: "Noto Sans TC", sans-serif;
     font-weight: 400;
-    background-color: $color2;
+    //background-color: $color2;
     box-sizing: border-box;
 }
 
 a {
   text-decoration: none;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.loading {
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.4);
+  position: fixed;
+  top:0;
+  left:0;
+  z-index: 98;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .loadingIcon {
+    scale: 2;
+    position: relative;
+    z-index: 99;
+    animation-duration: 2s;
+    animation-name: loading;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+  }
+}
+
+@keyframes loading {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .header {
@@ -143,5 +179,51 @@ a {
     flex-direction: column;
     justify-content: center;
     background-color: #fff;
+  }
+}
+
+.timeBar {
+  .timeBarBox {
+    width: 100%;
+    height: 10px;
+    background-color: rgba(0,0,0,0.2);
+    position: relative;
+  }
+  .timeBarBoxCurrent {
+
+  }
+  .timeBarBoxMark {
+
+  }
+  .timeBarBoxControl {
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    position: absolute;
+    top:0;
+    left:0;
+  }
+  .timeBarBoxControlRange {
+  }
+  .timeBarBoxControlPoint {
+    width: 16px;
+    height: 16px;
+    border-radius: 100%;
+    background-color: rgba(255,0,0,0.2);
+    position: absolute;
+    top:0;
+    left:0;
+    margin-top: -3px;
+    margin-left: -8px;
+    cursor: pointer;
+    position: absolute;
+  }
+  .timeBarBoxControlPointLabel {
+    width: 50px;
+    position: absolute;
+    top:-25px;
+    left:50%;
+    margin-left: -25px;
+    text-align: center;
   }
 }

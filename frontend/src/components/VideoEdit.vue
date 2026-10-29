@@ -4,24 +4,30 @@
   <el-dialog v-model="showExportDialog" title="匯出媒體" width="50vw">
     <el-form :model="form" label-width="auto" style="max-width: 600px">
       <el-form-item label="畫面幀率">
-        <el-input-number v-model="exportConfig.fps" :min="0" :max="60" />
-        <div class="ms-2">0為預設幀率</div>
+        <div>
+          <el-input-number v-model="exportConfig.fps" :min="0" :max="60" />
+          <div class="text-secondary">0為預設幀率</div>
+        </div>
       </el-form-item>
       <el-form-item label="畫面比例">
-        <el-select v-model="exportConfig.ratio" style="width: 240px">
-          <el-option label="原始比例" :value="null" />
-          <el-option label="120p" :value="120" />
-          <el-option label="240p" :value="240" />
-          <el-option label="360p" :value="360" />
-          <el-option label="480p" :value="480" />
-          <el-option label="720p" :value="720" />
-          <el-option label="1080p" :value="1080" />
-        </el-select>
-        <div class="ms-2">空值為原始比例</div>
+        <div>
+          <el-select v-model="exportConfig.ratio" style="width: 240px" placeholder="原始比例" :disabled="controlConfig.crop">
+            <el-option label="原始比例" :value="null" />
+            <el-option label="120p" :value="120" />
+            <el-option label="240p" :value="240" />
+            <el-option label="360p" :value="360" />
+            <el-option label="480p" :value="480" />
+            <el-option label="720p" :value="720" />
+            <el-option label="1080p" :value="1080" />
+          </el-select>
+          <div class="text-secondary">預設為原始比例，若開啟了範圍剪裁，值將固定為原始比例</div>
+        </div>
       </el-form-item>
       <el-form-item label="最佳化調色">
-        <el-switch v-model="exportConfig.palette" />
-        <div class="ms-2">開啟此選項，匯出的容量會較大</div>
+        <div>
+          <el-switch v-model="exportConfig.palette" />
+          <div class="text-secondary">開啟此選項，匯出的容量可能會較大</div>
+        </div>
       </el-form-item>
     </el-form>
     <div class="d-flex align-items-center justify-content-end">
@@ -45,13 +51,13 @@
         <el-slider class="mb-4" v-model="timeRange" range :step="0.1" :max="mediaDuration" :marks="mediaMark" @input="timeRangeInput" />
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
-            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.play ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.play=!controlConfig.play"><PauseIcon class="me-2" v-if="controlConfig.play" /><PlayIcon class="me-2" v-else /> {{controlConfig.play ? '暫停':'播放'}}</button>
-            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.crop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.crop=!controlConfig.crop;testC()"><CropIcon class="me-2" />範圍剪裁</button>
-            <button type="button" class="btn d-flex align-items-center rounded-pill me-2" :class="controlConfig.loop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.loop=!controlConfig.loop"><RepeatIcon class="me-2" />循環播放</button>
-            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill me-2"><SpeedometerIcon class="me-2" />播放速度</button>
+            <button type="button" class="btn d-flex align-items-center rounded-pill bg-gradient me-2" :class="controlConfig.play ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.play=!controlConfig.play"><PauseIcon class="me-2" v-if="controlConfig.play" /><PlayIcon class="me-2" v-else /> {{controlConfig.play ? '暫停':'播放'}}</button>
+            <button type="button" class="btn d-flex align-items-center rounded-pill bg-gradient me-2" :class="controlConfig.crop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.crop=!controlConfig.crop;openCrop()"><CropIcon class="me-2" />範圍剪裁</button>
+            <button type="button" class="btn d-flex align-items-center rounded-pill bg-gradient me-2" :class="controlConfig.loop ? 'btn-secondary':'btn-outline-secondary'" @click="controlConfig.loop=!controlConfig.loop"><RepeatIcon class="me-2" />循環播放</button>
+            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill bg-gradient me-2"><SpeedometerIcon class="me-2" />播放速度</button>
           </div>
           <div>
-            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill" @click="showExportDialog=!showExportDialog"><FloppyIcon class="me-2" />匯出</button>
+            <button type="button" class="btn d-flex align-items-center btn-outline-secondary rounded-pill bg-gradient" @click="showExportDialog=!showExportDialog"><FloppyIcon class="me-2" />匯出</button>
           </div>
         </div>
       </div>
@@ -67,9 +73,11 @@ import RepeatIcon from "../assets/icons/repeat.svg"
 import SpeedometerIcon from "../assets/icons/speedometer2.svg"
 import FloppyIcon from "../assets/icons/floppy.svg"
 import {ref,computed,watch,onMounted,nextTick} from "vue"
+import { useStore } from '../store/index.js'
 import { SaveFileDialog,APIExecMedia,ExportMedia } from "../../wailsjs/go/main/App";
 const props = defineProps(['src','info'])
 
+const store = useStore();
 const showExportDialog=ref(false)
 const exportConfig=ref({
   fps:0,
@@ -206,11 +214,14 @@ async function exportFunc() {
     videoSizeConfig:videoSizeConfig.value,
     exportConfig:exportConfig.value
   }
-
-  let res=await ExportMedia(data)
+  store.loading=true
+  showExportDialog.value=false
+  await ExportMedia(data)
+  store.loading=false
 }
 
-async function testC() {
+async function openCrop() {
+  exportConfig.value.ratio=null
   let node=cropRef.value.getStage()
   node.fire('transformend', { customData: '這是模擬的資料' }, true);
 }

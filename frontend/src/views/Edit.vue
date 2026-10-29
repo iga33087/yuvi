@@ -11,16 +11,20 @@ import CardBox from '../components/CardBox.vue'
 import VideoEdit from '../components/VideoEdit.vue'
 import { useRoute } from 'vue-router'
 import { GetFileInfo,DownloadFileByPath,SaveFileDialog } from "../../wailsjs/go/main/App";
+import { useStore } from '../store/index.js'
 const route = useRoute()
+const store = useStore();
 
 const mediaInfo=ref(null)
 const mediaURL=ref(null)
 
 async function getInit() {
     if(!route?.query?.path) return
+    store.loading=true
     mediaInfo.value=await GetFileInfo(route.query.path)
     const videoUr =`/api/files?path=${encodeURIComponent(route.query.path)}`
     mediaURL.value=videoUr
+    store.loading=false
 }
 
 onMounted(async ()=> {
