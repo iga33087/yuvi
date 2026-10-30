@@ -182,11 +182,24 @@ a {
 }
 
 .timeBar {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; 
   .timeBarBox {
     width: 100%;
     height: 10px;
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0,0,0,0.1);
     position: relative;
+    border-radius: 20px;
+  }
+  .timeBarBoxMask {
+    height: 100vh;
+    position: fixed;
+    top:0;
+    left:0;
+    background-color: rgba(255,0,0,0.2);
+    z-index: 97;
   }
   .timeBarBoxCurrent {
 
@@ -197,18 +210,26 @@ a {
   .timeBarBoxControl {
     width: 100%;
     height: 100%;
-    background-color: #000;
+    background-color: rgba(0,0,0,0.2);
     position: absolute;
     top:0;
     left:0;
+    border-radius: 20px;
   }
   .timeBarBoxControlRange {
+    width: 0;
+    height: 100%;
+    background-color: #f00;
+    position: absolute;
+    top:0;
+    left:0;
+    border-radius: 20px;
   }
   .timeBarBoxControlPoint {
     width: 16px;
     height: 16px;
     border-radius: 100%;
-    background-color: rgba(255,0,0,0.2);
+    background-color: rgba(0,0,0,0.2);
     position: absolute;
     top:0;
     left:0;
@@ -216,6 +237,9 @@ a {
     margin-left: -8px;
     cursor: pointer;
     position: absolute;
+    &:hover {
+      background-color: rgba(0,0,0,0.6);
+    }
   }
   .timeBarBoxControlPointLabel {
     width: 50px;
@@ -224,5 +248,18 @@ a {
     left:50%;
     margin-left: -25px;
     text-align: center;
+  }
+  .timeBarBoxControlPoint.point1 {
+    z-index: 1;
+  }
+  .timeBarBoxControlPoint.point2 {
+    z-index: 2;
+  }
+  .timeBarBoxControlPoint.point3 {
+    z-index: 2;
+    background-color: rgba(117, 195, 255, 0.4);
+    &:hover {
+      background-color: rgba(117, 195, 255, 0.8);
+    }
   }
 }
